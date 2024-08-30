@@ -18,7 +18,7 @@ jobs:
         id: Search_for_reopenable_issues
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
+          script: >
               const core = require('@actions/core');
               const github = require('@actions/github');
               const pullRequest = github.context.payload.pull_request;
