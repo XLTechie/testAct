@@ -24,7 +24,7 @@ async function openRevertedIssue(pullRequestTitle, pullRequestBody, repository) 
 }
 
 // Replace with your GitHub token
-const githubToken = 'YOUR_GITHUB_TOKEN';
+const githubToken = process.env.GITHUB_TOKEN;
 
 // Get the pull request title and body from the environment variables
 const pullRequestTitle = process.env.PULL_REQUEST_TITLE;
