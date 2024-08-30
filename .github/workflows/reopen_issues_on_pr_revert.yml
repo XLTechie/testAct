@@ -23,33 +23,38 @@ jobs:
             const github = require('@actions/github');
 
             const pullRequest = github.context.payload.pull_request;
-            const regex = /^[Rr][Ee]-?[Oo][Pp][Ee][Nn][Ss]? +#(\d+) *$/;
-            const match = regex.exec(pullRequest.body);
+            const titleRegex = /^revert(?:s|ed|ing)?\B/i;
 
-            if (match) {
-              const issueNumber = match[1];
+            if (titleRegex.test(pullRequest.title)) {
+	            const bodyRegex = /^re-?opens? +#(\d+) *$/i;
+	            
+	            const match = bodyRegex.exec(pullRequest.body);
 
-              const octokit = new github.getOctokit(core.getInput('github-token'));
-              octokit.rest.issues.get({
-                owner: pullRequest.repository.owner.login,
-                repo: pullRequest.repository.name,
-                issue_number: issueNumber,
-              })
-              .then(response => {
-                const issue = response.data;
-                if (issue.state === 'closed') {
-                  octokit.rest.issues.update({
-                    owner: pullRequest.repository.owner.login,
-                    repo: pullRequest.repository.name,
-                    issue_number: issueNumber,
-                    state: 'open',
-                  });
-                  core.info(`Reopened issue #${issueNumber}`);
-                } else {
-                  core.info(`Issue #${issueNumber} is already open.`);
-                }
-              })
-              .catch(error => {
-                core.setFailed(`Error opening issue #${issueNumber}: ${error.message}`);
-              });
-            }
+	            if (match) {
+	              const issueNumber = match[1];
+
+	              const octokit = new github.getOctokit(core.getInput('github-token'));
+	              octokit.rest.issues.get({
+	                owner: pullRequest.repository.owner.login,
+	                repo: pullRequest.repository.name,
+	                issue_number: issueNumber,
+	              })
+	              .then(response => {
+	                const issue = response.data;
+	                if (issue.state === 'closed') {
+	                  octokit.rest.issues.update({
+	                    owner: pullRequest.repository.owner.login,
+	                    repo: pullRequest.repository.name,
+	                    issue_number: issueNumber,
+	                    state: 'open',
+	                  });
+	                  core.info(`Reopened issue #${issueNumber}`);
+	                } else {
+	                  core.info(`Issue #${issueNumber} is already open.`);
+	                }
+	              })
+	              .catch(error => {
+	                core.setFailed(`Error opening issue #${issueNumber}: ${error.message}`);
+	              });
+	            }
+	           }
