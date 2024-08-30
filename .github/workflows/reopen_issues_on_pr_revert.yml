@@ -1,5 +1,9 @@
 name: Open Reverted Issues
 
+permissions:
+  issues: write
+  pull-requests: read
+
 on:
   pull_request:
     types: [closed]
@@ -10,11 +14,42 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Install Node
-        uses: actions/setup-node@v3
+      - name: Find and re-open listed issues
+        uses: actions/github-script@v6
         with:
-          node-version: '16.x'
-      - name: Find and Open Reverted Issue
-        run: |
-          npm install axios
-          node ./scripts/open-reverted-issues.js ${{ github.event.pull_request.title }} ${{ github.event.pull_request.body }} ${{ github.repository }} ${{ github.token }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const core = require('@actions/core');
+            const github = require('@actions/github');
+
+            const pullRequest = github.context.payload.pull_request;
+            const regex = /^[Rr][Ee]-?[Oo][Pp][Ee][Nn][Ss]? +#(\d+) *$/;
+            const match = regex.exec(pullRequest.body);
+
+            if (match) {
+              const issueNumber = match[1];
+
+              const octokit = new github.getOctokit(core.getInput('github-token'));
+              octokit.rest.issues.get({
+                owner: pullRequest.repository.owner.login,
+                repo: pullRequest.repository.name,
+                issue_number: issueNumber,
+              })
+              .then(response => {
+                const issue = response.data;
+                if (issue.state === 'closed') {
+                  octokit.rest.issues.update({
+                    owner: pullRequest.repository.owner.login,
+                    repo: pullRequest.repository.name,
+                    issue_number: issueNumber,
+                    state: 'open',
+                  });
+                  core.info(`Reopened issue #${issueNumber}`);
+                } else {
+                  core.info(`Issue #${issueNumber} is already open.`);
+                }
+              })
+              .catch(error => {
+                core.setFailed(`Error opening issue #${issueNumber}: ${error.message}`);
+              });
+            }
