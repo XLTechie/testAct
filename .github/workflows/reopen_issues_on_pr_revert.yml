@@ -1,15 +1,19 @@
 name: Open Reverted Issues
-on: pull_request:
+
+on:
+  pull_request:
     types: [closed]
 
-jobs: open-reverted-issues:
+jobs:
+  open-reverted-issues:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
       - name: Find and Open Reverted Issue
         uses: actions/setup-node@v3
-        with:          node-version: '16.x'
+        with:
+          node-version: '16.x'
         run: |
           npm install axios
           node ./scripts/open-reverted-issues.js ${{ github.event.pull_request.title }} ${{ github.event.pull_request.body }} ${{ github.repository }}
